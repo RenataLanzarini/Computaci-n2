@@ -134,7 +134,7 @@ def _prompt(screen, label):
 def _key(key, view, selected, rows, pinned, sort_mode, help_visible,
          intervals, minimums, control):
     char = chr(key).lower() if 0 <= key < 256 else ""
-    if char in "1234567":
+    if char and char in "1234567":
         view = int(char) - 1
     elif char in ALIASES:
         view = ALIASES[char]
