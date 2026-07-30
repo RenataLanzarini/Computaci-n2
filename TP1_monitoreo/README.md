@@ -1,5 +1,7 @@
 # Monitor de Procesos y Threads
 
+## Descripción general
+
 Trabajo Práctico Nº 1 de Computación II (Universidad de Mendoza, 2026).
 Inspecciona directamente `/proc` y presenta en tiempo real la anatomía de los
 procesos Linux, sin `psutil` ni comandos externos.
