@@ -1,7 +1,7 @@
 import curses
 import unittest
 
-from src.display import _key
+from src.display import _format_detail, _key
 
 
 class _Lock:
@@ -79,6 +79,17 @@ class DisplayKeyTests(unittest.TestCase):
         self.intervals[0].value = 0.5
         self.press(ord("-"), view=0)
         self.assertEqual(self.intervals[0].value, 0.5)
+
+    def test_verbose_mode_increases_visible_file_descriptors(self):
+        value = {
+            "fds": [
+                {"fd": number, "tipo": "file", "destino": f"/tmp/{number}"}
+                for number in range(40)
+            ]
+        }
+
+        self.assertEqual(len(_format_detail(value, False)), 10)
+        self.assertEqual(len(_format_detail(value, True)), 30)
 
 
 if __name__ == "__main__":
