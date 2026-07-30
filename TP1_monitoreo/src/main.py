@@ -39,6 +39,27 @@ def apply_config(config, intervals, minimums, filters=None):
         filters["usuario"] = str(defaults.get("usuario", ""))
 
 
+def handle_monitor_signal(signum, intervals, minimums, filters, snapshot,
+                          snapshot_lock, verbose, stop_event,
+                          config_path=CONFIG, output_directory=ROOT):
+    """Ejecuta fuera del handler la acción asociada a una señal."""
+    if signum in (signal.SIGINT, signal.SIGTERM):
+        stop_event.set()
+    elif signum == getattr(signal, "SIGHUP", -1):
+        apply_config(
+            load_config(config_path),
+            intervals,
+            minimums,
+            filters,
+        )
+    elif signum == getattr(signal, "SIGUSR1", -1):
+        return dump_snapshot(snapshot, snapshot_lock, output_directory)
+    elif signum == getattr(signal, "SIGUSR2", -1):
+        with verbose.get_lock():
+            verbose.value = not verbose.value
+    return None
+
+
 def main():
     if not sys.platform.startswith("linux"):
         raise SystemExit("Este monitor requiere Linux; ejecutalo con Docker.")
@@ -89,16 +110,16 @@ def main():
                 if message.get("action") == "quit":
                     stop_event.set()
             for signum in coordinator.pending():
-                if signum in (signal.SIGINT, signal.SIGTERM):
-                    stop_event.set()
-                elif signum == getattr(signal, "SIGHUP", -1):
-                    apply_config(load_config(CONFIG), intervals, minimums,
-                                 filters)
-                elif signum == getattr(signal, "SIGUSR1", -1):
-                    dump_snapshot(snapshot, snapshot_lock, ROOT)
-                elif signum == getattr(signal, "SIGUSR2", -1):
-                    with verbose.get_lock():
-                        verbose.value = not verbose.value
+                handle_monitor_signal(
+                    signum,
+                    intervals,
+                    minimums,
+                    filters,
+                    snapshot,
+                    snapshot_lock,
+                    verbose,
+                    stop_event,
+                )
                 # SIGWINCH no necesita trabajo: curses consulta el tamaño.
             failed = [process for process in processes
                       if process.exitcode is not None]
