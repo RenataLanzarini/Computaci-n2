@@ -100,8 +100,8 @@ def main():
                     with verbose.get_lock():
                         verbose.value = not verbose.value
                 # SIGWINCH no necesita trabajo: curses consulta el tamaño.
-            failed = [p for p in processes[:-1]
-                      if p.exitcode not in (None, 0)]
+            failed = [process for process in processes
+                      if process.exitcode is not None]
             if failed:
                 raise RuntimeError(
                     "Proceso hijo finalizó inesperadamente: " +

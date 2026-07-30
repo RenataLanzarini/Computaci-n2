@@ -1,6 +1,7 @@
 """Interfaz curses con lista superior y detalle inferior."""
 
 import curses
+import os
 import time
 
 VIEWS = ["resumen", "memoria", "fds", "threads", "senales", "scheduling",
@@ -10,8 +11,18 @@ ALIASES = {"r": 0, "m": 1, "f": 2, "t": 3, "s": 4, "p": 5, "g": 6}
 
 def display_process(snapshot, lock, intervals, minimums, control, stop_event,
                     verbose, filters):
-    curses.wrapper(_run, snapshot, lock, intervals, minimums, control,
-                   stop_event, verbose, filters)
+    terminal_fd = None
+    try:
+        # multiprocessing redirige stdin de los hijos a /dev/null. El display
+        # necesita recuperar la terminal controladora para recibir teclado.
+        terminal_fd = os.open("/dev/tty", os.O_RDWR)
+        os.dup2(terminal_fd, 0)
+        os.dup2(terminal_fd, 1)
+        curses.wrapper(_run, snapshot, lock, intervals, minimums, control,
+                       stop_event, verbose, filters)
+    finally:
+        if terminal_fd is not None and terminal_fd > 2:
+            os.close(terminal_fd)
 
 
 def _safe_add(screen, row, col, text, width=None):
