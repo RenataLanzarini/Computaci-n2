@@ -125,7 +125,9 @@ def _format_detail(value, verbose):
                          for x in item[:limit])
         elif key == "threads" and isinstance(item, list):
             lines.extend(f"TID {x['tid']} {x['estado']} CPU={x['cpu']:.1f}% "
-                         f"{x['nombre']}" for x in item[:20])
+                         f"CTX={x.get('voluntary', 0)}/"
+                         f"{x.get('involuntary', 0)} {x['nombre']}"
+                         for x in item[:20])
         else:
             lines.append(f"{key}: {item}")
     return lines or ["Sin datos (esperando próximo ciclo o sin permisos)"]

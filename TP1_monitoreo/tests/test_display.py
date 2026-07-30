@@ -91,6 +91,23 @@ class DisplayKeyTests(unittest.TestCase):
         self.assertEqual(len(_format_detail(value, False)), 10)
         self.assertEqual(len(_format_detail(value, True)), 30)
 
+    def test_thread_detail_shows_context_switches(self):
+        value = {
+            "threads": [{
+                "tid": 123,
+                "estado": "S",
+                "cpu": 2.5,
+                "voluntary": 17,
+                "involuntary": 4,
+                "nombre": "worker",
+            }]
+        }
+
+        self.assertEqual(
+            _format_detail(value, False),
+            ["TID 123 S CPU=2.5% CTX=17/4 worker"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
