@@ -82,16 +82,31 @@ agregador durante operaciones relativamente lentas de terminal.
 
 ## Conceptos del curso aplicados
 
-- **Procesos y GIL:** los analizadores son procesos independientes, por lo que
-  no comparten el intérprete ni su GIL.
-- **`/proc`:** `stat`, `status`, `maps`, `fd` y `task` exponen estado del
-  proceso, memoria, FDs y LWPs. Un zombie se reconoce por estado `Z`: terminó,
-  pero su padre todavía no llamó a `wait()`.
-- **IPC:** Queue y Pipe transmiten mensajes; Manager, Value y Array comparten
-  estado. Cada mecanismo se elige según forma y cardinalidad del dato.
-- **Sincronización:** locks protegen operaciones compuestas y un escritor único
-  elimina competencia entre analizadores sobre el snapshot.
-- **Threads:** `/proc/PID/task/TID` muestra los LWPs y sus context switches.
+- **Clase 3 — Procesos y `/proc`:** `src/procfs.py` lee `stat`, `status`,
+  `maps`, `fd` y `task` para obtener estado, memoria, FDs y LWPs directamente
+  del kernel.
+- **Clase 4 — `fork`, `exec`, `wait` y zombies:** la vista Sistema reconoce un
+  zombie por el estado `Z`. Es un proceso terminado cuya entrada permanece
+  porque su padre todavía no ejecutó `wait()`. El supervisor usa `join()` para
+  esperar a sus hijos y evitar dejarlos en ese estado.
+- **Clase 5 — Pipes:** el `Pipe` entre display y supervisor transporta mensajes
+  de control, mientras las `Queue` implementan el patrón
+  productor–consumidor para lotes de PID y resultados.
+- **Clase 6 — Señales:** `src/senales.py` usa `signal.set_wakeup_fd` y un
+  socketpair. El handler permanece mínimo y el supervisor ejecuta después las
+  acciones de cierre, recarga, dump y modo detallado.
+- **Clase 7 — Memoria compartida:** el snapshot y los valores de control son
+  accesibles por varios procesos y se protegen con locks cuando una operación
+  compuesta debe ser atómica.
+- **Clases 8 y 9 — Multiprocessing:** los siete analizadores son procesos
+  independientes. `Manager.dict` representa el snapshot dinámico, `Value`
+  guarda escalares compartidos y `Array` mantiene los contadores de ciclos.
+- **Clase 10 — Threads y GIL:** `/proc/PID/task/TID` permite observar los LWPs
+  y sus context switches. Los analizadores son procesos, no threads, por lo que
+  cada uno tiene su propio intérprete y su propio GIL.
+- **Clase 11 — Sincronización:** los locks protegen operaciones compuestas y el
+  agregador actúa como único escritor para impedir actualizaciones parciales
+  del snapshot.
 - **Scheduler:** nice, prioridad, policy, afinidad y cambios de contexto se
   leen del kernel, no se estiman mediante herramientas externas.
 
@@ -143,6 +158,40 @@ docker compose up --build
 Para la prueba manual se recorren las siete vistas, todos los controles y las
 cinco señales obligatorias. Este repositorio conserva únicamente la
 documentación técnica necesaria para ejecutar, probar y entregar el monitor.
+
+### Prueba manual de las señales
+
+Primero se levanta el monitor:
+
+```bash
+docker compose up --build
+```
+
+Desde otra terminal se pueden probar las señales que no finalizan el servicio:
+
+```bash
+# Editar config.json en el host y recargar intervalos y filtros.
+docker compose kill -s HUP monitor
+
+# Crear /app/dump_<timestamp>.json dentro del contenedor.
+docker compose kill -s USR1 monitor
+
+# Activar el modo detallado; repetir para volver al modo normal.
+docker compose kill -s USR2 monitor
+docker compose kill -s USR2 monitor
+```
+
+Para comprobar cada señal de cierre hay que levantar nuevamente el servicio
+entre una prueba y la siguiente:
+
+```bash
+docker compose kill -s INT monitor
+docker compose up -d
+docker compose kill -s TERM monitor
+```
+
+Después de SIGINT o SIGTERM, `docker compose ps` no debe mostrar el servicio en
+ejecución. Para terminar una sesión normal desde la TUI se usa `q`.
 
 ## Estructura
 
