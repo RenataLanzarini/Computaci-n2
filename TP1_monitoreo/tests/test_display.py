@@ -1,7 +1,7 @@
 import curses
 import unittest
 
-from src.display import _format_detail, _key
+from src.display import _format_detail, _format_header, _key
 
 
 class _Lock:
@@ -107,6 +107,10 @@ class DisplayKeyTests(unittest.TestCase):
             _format_detail(value, False),
             ["TID 123 S CPU=2.5% CTX=17/4 worker"],
         )
+
+    def test_header_shows_free_and_pinned_process(self):
+        self.assertIn("pin=libre", _format_header(0, 2.0, 0, None))
+        self.assertIn("pin=20", _format_header(0, 2.0, 0, 20))
 
 
 if __name__ == "__main__":

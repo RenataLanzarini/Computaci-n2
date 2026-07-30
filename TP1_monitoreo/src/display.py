@@ -9,6 +9,17 @@ VIEWS = ["resumen", "memoria", "fds", "threads", "senales", "scheduling",
 ALIASES = {"r": 0, "m": 1, "f": 2, "t": 3, "s": 4, "p": 5, "g": 6}
 
 
+def _format_header(view, interval, sort_mode, pinned):
+    pin = str(pinned) if pinned is not None else "libre"
+    return (
+        "MONITOR /proc  "
+        f"Vista {view + 1}:{VIEWS[view]}  "
+        f"intervalo={interval:.1f}s  "
+        f"orden={('CPU', 'RSS', 'PID')[sort_mode]}  "
+        f"pin={pin}"
+    )
+
+
 def display_process(snapshot, lock, intervals, minimums, control, stop_event,
                     verbose, filters):
     terminal_fd = None
@@ -70,10 +81,17 @@ def _run(screen, snapshot, lock, intervals, minimums, control, stop_event,
                     break
         selected = min(max(0, selected), max(0, len(rows) - 1))
         screen.erase()
-        _safe_add(screen, 0, 0, "MONITOR /proc  "
-                  f"Vista {view + 1}:{VIEWS[view]}  "
-                  f"intervalo={intervals[view].value:.1f}s  "
-                  f"orden={('CPU','RSS','PID')[sort_mode]}")
+        _safe_add(
+            screen,
+            0,
+            0,
+            _format_header(
+                view,
+                intervals[view].value,
+                sort_mode,
+                pinned,
+            ),
+        )
         _safe_add(screen, 1, 0,
                   " PID   USER       ST  CPU%    RSS KiB  THR  COMANDO")
         height, width = screen.getmaxyx()

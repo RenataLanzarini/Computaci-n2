@@ -29,7 +29,9 @@ La TUI permite cambiar de vista con `1`–`7` o `r/m/f/t/s/p/g`, navegar con
 flechas, fijar un PID con Enter, cambiar orden con `c`, ajustar el intervalo con
 `+`/`-`, mostrar ayuda con `h`/`?` y salir con `q`. `/` filtra por comando y
 `u` filtra por usuario. Para quitar cualquiera de esos filtros hay que usar su
-tecla otra vez y confirmar una entrada vacía.
+tecla otra vez y presionar Enter inmediatamente, sin escribir ningún carácter.
+El encabezado muestra `pin=libre` cuando no hay un proceso fijado y `pin=<PID>`
+después de presionar Enter sobre un proceso.
 
 ## Arquitectura
 
