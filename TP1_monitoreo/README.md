@@ -14,6 +14,17 @@ Se necesita Docker con Compose:
 docker compose up --build
 ```
 
+En Docker Desktop para Windows, `docker compose up` puede mostrar la TUI sin
+reenviar las teclas al contenedor. Para una sesión interactiva se usa:
+
+```bash
+docker compose run --build --rm monitor
+```
+
+Este comando utiliza el mismo servicio y la misma imagen, pero conecta el
+teclado directamente. En Linux se puede usar normalmente el comando obligatorio
+`docker compose up --build`.
+
 La TUI permite cambiar de vista con `1`–`7` o `r/m/f/t/s/p/g`, navegar con
 flechas, fijar un PID con Enter, cambiar orden con `c`, ajustar el intervalo con
 `+`/`-`, mostrar ayuda con `h`/`?` y salir con `q`. `/` filtra por comando y
