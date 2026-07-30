@@ -16,7 +16,9 @@ docker compose up --build
 
 La TUI permite cambiar de vista con `1`–`7` o `r/m/f/t/s/p/g`, navegar con
 flechas, fijar un PID con Enter, cambiar orden con `c`, ajustar el intervalo con
-`+`/`-`, mostrar ayuda con `h`/`?` y salir con `q`.
+`+`/`-`, mostrar ayuda con `h`/`?` y salir con `q`. `/` filtra por comando y
+`u` filtra por usuario. Para quitar cualquiera de esos filtros hay que usar su
+tecla otra vez y confirmar una entrada vacía.
 
 ## Arquitectura
 
@@ -65,6 +67,19 @@ Las señales usan `signal.set_wakeup_fd` con un socketpair. El handler no
 serializa JSON, no imprime y no adquiere locks; el loop supervisor efectúa
 shutdown, reload, dump o verbose fuera del contexto asíncrono.
 
+## Decisiones sobre la TUI
+
+Se eligió `curses` porque forma parte de la biblioteca estándar, controla el
+repintado de una terminal interactiva sin agregar dependencias y permite leer
+teclas especiales como las flechas. La pantalla se divide aproximadamente por
+la mitad: arriba permanece la lista resumida de procesos y abajo cambia el
+detalle de la vista activa. Esta distribución conserva el contexto del proceso
+seleccionado al alternar entre las siete dimensiones.
+
+El display trabaja con una copia del snapshot tomada bajo lock. Después libera
+el lock y recién entonces ordena, filtra y dibuja; de esa forma no bloquea al
+agregador durante operaciones relativamente lentas de terminal.
+
 ## Conceptos del curso aplicados
 
 - **Procesos y GIL:** los analizadores son procesos independientes, por lo que
@@ -88,10 +103,24 @@ shutdown, reload, dump o verbose fuera del contexto asíncrono.
 - `SIGUSR2`: alterna detalle verbose (más FDs).
 - `SIGWINCH`: el siguiente repintado usa el nuevo tamaño.
 
+`config.json` está montado en modo de solo lectura desde el directorio del
+repositorio. Por eso se puede editar en el host y luego enviar SIGHUP sin
+reconstruir la imagen. Los valores recargados nunca bajan del intervalo mínimo
+de cada vista.
+
 Ejemplo desde otra terminal:
 
 ```bash
 docker compose kill -s USR1 monitor
+```
+
+El dump se genera dentro del contenedor en `/app` con un nombre como
+`dump_20260729_231500.json`. Mientras el servicio está activo se puede consultar
+su nombre y copiarlo al host con:
+
+```bash
+docker compose exec monitor sh -c 'ls /app/dump_*.json'
+docker compose cp monitor:/app/dump_20260729_231500.json .
 ```
 
 ## Limitaciones conocidas
