@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 import tempfile
+import time
 import unittest
 
 import httpx
@@ -71,6 +72,19 @@ class PruebasAPI(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(cancelada.status_code, 200)
         self.assertEqual(cancelada.json()["estado"], "cancelada")
         await asyncio.wait_for(self.app.state.gestor.esperar_pendientes(), 1)
+
+    async def test_post_responde_sin_esperar_la_tarea(self):
+        inicio = time.perf_counter()
+        respuesta = await self.cliente.post(
+            "/tareas",
+            json={"tipo": "esperar", "segundos": 0.4, "timeout": 1},
+        )
+        duracion = time.perf_counter() - inicio
+
+        self.assertEqual(respuesta.status_code, 201)
+        self.assertLess(duracion, 0.2)
+        self.assertIn(respuesta.json()["estado"], {"pendiente", "ejecutando"})
+        await self.app.state.gestor.esperar_pendientes()
 
     async def test_validacion_y_tarea_inexistente(self):
         invalida = await self.cliente.post(

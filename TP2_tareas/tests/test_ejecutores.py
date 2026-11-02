@@ -47,3 +47,19 @@ class PruebasEjecutores(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resultado["hash"], esperado)
         self.assertEqual(resultado["iteraciones"], 2)
 
+    async def test_todas_las_descargas_fallidas_generan_error(self):
+        async def fallar(_pedido: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectError("servidor inaccesible")
+
+        cliente = httpx.AsyncClient(transport=httpx.MockTransport(fallar))
+        ejecutor = EjecutorTareas(1, cliente=cliente)
+        await ejecutor.iniciar()
+        try:
+            with self.assertRaisesRegex(RuntimeError, "todas las descargas"):
+                await ejecutor.ejecutar(
+                    "descargar", {"urls": ["https://ejemplo.test/falla"]}
+                )
+        finally:
+            await ejecutor.cerrar()
+            await cliente.aclose()
+

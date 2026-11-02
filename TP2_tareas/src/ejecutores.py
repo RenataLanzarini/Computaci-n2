@@ -91,6 +91,8 @@ class EjecutorTareas:
                     "tiempo_segundos": time.perf_counter() - inicio,
                 }
 
-        return await asyncio.gather(*(una(url) for url in urls))
-
+        resultados = await asyncio.gather(*(una(url) for url in urls))
+        if all("error" in item for item in resultados):
+            raise RuntimeError("fallaron todas las descargas")
+        return resultados
 
