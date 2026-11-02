@@ -56,6 +56,23 @@ class PruebasGestor(unittest.IsolatedAsyncioTestCase):
                 NuevaTarea(tipo="esperar", segundos=0, timeout=1)
             )
 
+    async def test_apagado_cancela_al_vencer_el_limite(self):
+        gestor = GestorTareas(1, 10, ejecutor_controlado)
+        await gestor.iniciar()
+        registro = gestor.crear(
+            NuevaTarea(tipo="esperar", segundos=10, timeout=20)
+        )
+        for _ in range(50):
+            if registro.estado == "ejecutando":
+                break
+            await asyncio.sleep(0.01)
+
+        await asyncio.wait_for(gestor.detener(0.02), timeout=0.5)
+
+        self.assertEqual(registro.estado, "cancelada")
+        self.assertEqual(registro.error, "cancelada durante el apagado")
+        self.assertEqual(gestor._workers, [])
+
 
 if __name__ == "__main__":
     unittest.main()

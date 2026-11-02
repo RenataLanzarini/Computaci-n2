@@ -265,7 +265,8 @@ docker compose run --rm api python -m unittest discover -s tests -v
 Incluye creación y consulta, filtro, estadísticas, `POST` inmediato,
 cancelación pendiente y en ejecución, timeout, excepción, cola llena, descargas
 concurrentes, fallo total de descargas, hash en el executor y persistencia. En
-la verificación final pasaron 11 pruebas.
+la verificación final pasaron 12 pruebas, incluida la cancelación de tareas
+largas cuando vence el límite de apagado.
 
 También se verificó manualmente que Compose expone la API al host, una tarea
 pasa de `pendiente` a `completada`, el apagado crea el JSON y el siguiente

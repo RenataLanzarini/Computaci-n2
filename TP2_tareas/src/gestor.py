@@ -151,6 +151,12 @@ class GestorTareas:
         try:
             await asyncio.wait_for(self.cola.join(), timeout=limite)
         except TimeoutError:
+            for registro in self.tareas.values():
+                if registro.estado == "pendiente":
+                    registro.estado = "cancelada"
+                    registro.error = "cancelada durante el apagado"
+                    registro.finalizada = ahora_iso()
+            ejecuciones_canceladas = []
             for tarea_id, ejecucion in list(self._ejecuciones.items()):
                 registro = self.tareas[tarea_id]
                 if registro.estado == "ejecutando":
@@ -158,6 +164,15 @@ class GestorTareas:
                     registro.error = "cancelada durante el apagado"
                     registro.finalizada = ahora_iso()
                 ejecucion.cancel()
+                ejecuciones_canceladas.append(ejecucion)
+            # Primero dejamos que _procesar reciba la cancelación y vuelva al
+            # bucle del worker. Si canceláramos ambos niveles al mismo tiempo,
+            # _procesar podría consumir el CancelledError destinado al worker.
+            await asyncio.gather(
+                *ejecuciones_canceladas, return_exceptions=True
+            )
+            while self._ejecuciones:
+                await asyncio.sleep(0)
         for worker in self._workers:
             worker.cancel()
         await asyncio.gather(*self._workers, return_exceptions=True)
