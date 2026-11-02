@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      TASK_WORKERS: "3"
+      TASK_CPU_WORKERS: "2"
+      TASK_QUEUE_SIZE: "100"
+      TASK_SHUTDOWN_TIMEOUT: "10"
+      TASK_STATE_DIR: "/app/estado"
+    volumes:
+      - ./estado:/app/estado
+    stop_grace_period: 15s
+
